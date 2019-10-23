@@ -130,7 +130,7 @@ class SSHConnection {
 
   private async connect(host: string, stream?: NodeJS.ReadableStream): Promise<Client> {
     const connection = new Client()
-    return new Promise<Client>(async (resolve) => {
+    return new Promise<Client>(async (resolve, reject) => {
       const options = {
         host,
         port: this.options.endPort,
@@ -156,6 +156,8 @@ class SSHConnection {
       connection.on('ready', () => {
         this.connections.push(connection)
         return resolve(connection)
+      }).on('error', (err) => {
+        return reject(err)
       })
     })
   }
@@ -173,19 +175,23 @@ class SSHConnection {
   }
 
   async forward(options: ForwardingOptions) {
-    const connection = await this.establish()
-    return new Promise((resolve, reject) => {
-      this.server = net.createServer((socket) => {
-        connection.forwardOut('localhost', options.fromPort, options.toHost || 'localhost', options.toPort, (error, stream) => {
-          if (error) {
-            return reject(error)
-          }
-          socket.pipe(stream)
-          stream.pipe(socket)
+    return new Promise(async (resolve, reject) => {
+      try {
+        const connection = await this.establish()
+        this.server = net.createServer((socket) => {
+          connection.forwardOut('localhost', options.fromPort, options.toHost || 'localhost', options.toPort, (error, stream) => {
+            if (error) {
+              return reject(error)
+            }
+            socket.pipe(stream)
+            stream.pipe(socket)
+          })
+        }).listen(options.fromPort, 'localhost', () => {
+          return resolve()
         })
-      }).listen(options.fromPort, 'localhost', () => {
-        return resolve()
-      })
+      } catch (err) {
+        reject(err)
+      }
     })
   }
 }
