@@ -26,6 +26,6 @@ declare class SSHConnection {
     private connectViaBastion;
     private connect;
     private getPassphrase;
-    forward(options: ForwardingOptions): Promise<unknown>;
+    forward(options: ForwardingOptions): Promise<{}>;
 }
 export { SSHConnection, Options };
