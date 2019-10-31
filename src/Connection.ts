@@ -187,7 +187,7 @@ class SSHConnection {
             stream.pipe(socket)
           })
         }).listen(options.fromPort, 'localhost', () => {
-          return resolve()
+          return resolve(connection);
         })
       } catch (err) {
         reject(err)
